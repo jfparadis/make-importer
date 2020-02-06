@@ -29,12 +29,30 @@ export async function test(testInfo) {
 
   const transforms = [];
   const { evaluateProgram } = makeEvaluators({ transforms });
+
+  // ********
+
+  const evaluateProgramWrap = (src, ...args) => {
+    if (src.includes('once.default')) {
+      console.log('\n***\n', src, '\n***\n');
+      src = src.replace(
+        'const { default: $c‍_default } = { default:',
+        '$h\u200d_once.default({ default:',
+      );
+      src = src.replace('};$h‍_once.default($c‍_default);', '});');
+      console.log('\n***\n', src, '\n***\n');
+    }
+    return evaluateProgram(src, ...args);
+  };
+
+  // ********
+
   const importer = makeImporter({
     resolve: mi.makeRootedResolver(testInfo.rootUrl),
     locate: mi.makeSuffixLocator('.js'),
     retrieve: mi.makeProtocolRetriever(protoHandlers),
     analyze: mi.makeTypeAnalyzer(typeAnalyzers),
-    rootLinker: mi.makeEvaluateLinker(evaluateProgram),
+    rootLinker: mi.makeEvaluateLinker(evaluateProgramWrap),
   });
   transforms[0] = makeModuleTransformer(babelCore, importer);
 

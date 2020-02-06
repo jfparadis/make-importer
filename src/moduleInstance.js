@@ -98,7 +98,11 @@ export function makeModuleInstance(
           notify,
         };
         localGetNotify[localName] = fixedGetNotify;
-        onceVar[localName] = init;
+        if (localName === 'default') {
+          onceVar[localName] = initValue => init(initValue.default);
+        } else {
+          onceVar[localName] = init;
+        }
       }
 
       moduleNSProps[fixedExportName] = {

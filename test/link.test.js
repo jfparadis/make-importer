@@ -1,7 +1,24 @@
 import { test } from 'tape-promise/tape';
 
-import { evaluateProgram as evaluate } from '@agoric/evaluate';
+import { evaluateProgram } from '@agoric/evaluate';
 import { makeEvaluateLinker } from '../src';
+
+// ********
+
+const evaluateProgramWrap = (src, ...args) => {
+  if (src.includes('once.default')) {
+    console.log('\n***\n', src, '\n***\n');
+    src = src.replace(
+      'const { default: $c‍_default } = { default:',
+      '$h\u200d_once.default({ default:',
+    );
+    src = src.replace('};$h‍_once.default($c‍_default);', '});');
+    console.log('\n***\n', src, '\n***\n');
+  }
+  return evaluateProgram(src, ...args);
+};
+
+// ********
 
 test('evaluate linker', async t => {
   try {
@@ -9,7 +26,7 @@ test('evaluate linker', async t => {
       if (!options.allowHidden) {
         throw TypeError('allowHidden is not set');
       }
-      return evaluate(src, endowments, options);
+      return evaluateProgramWrap(src, endowments, options);
     };
     const rootLinker = makeEvaluateLinker(assertEvaluate);
     const linkageMap = new Map([

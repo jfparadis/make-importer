@@ -1,12 +1,29 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { test } from 'tape-promise/tape';
-import { evaluateProgram as evaluate } from '@agoric/evaluate';
+import { evaluateProgram } from '@agoric/evaluate';
 import { makeModuleAnalyzer } from '@agoric/transform-module';
 import * as babelCore from '@babel/core';
 import fs from 'fs';
 import path from 'path';
 
 import makeImporter, * as mi from '../src';
+
+// ********
+
+const evaluateProgramWrap = (src, ...args) => {
+  if (src.includes('once.default')) {
+    console.log('\n***\n', src, '\n***\n');
+    src = src.replace(
+      'const { default: $c‍_default } = { default:',
+      '$h\u200d_once.default({ default:',
+    );
+    src = src.replace('};$h‍_once.default($c‍_default);', '});');
+    console.log('\n***\n', src, '\n***\n');
+  }
+  return evaluateProgram(src, ...args);
+};
+
+// ********
 
 const readFile = ({ pathname }) =>
   fs.promises
@@ -22,7 +39,7 @@ const setup = rootUrl => {
     locate: mi.makeSuffixLocator('.js'),
     retrieve: mi.makeProtocolRetriever(protoHandlers),
     analyze: mi.makeTypeAnalyzer(typeAnalyzers),
-    rootLinker: mi.makeEvaluateLinker(evaluate),
+    rootLinker: mi.makeEvaluateLinker(evaluateProgramWrap),
   });
   const endowments = {
     insist(assertion, description) {
